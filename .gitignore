@@ -1,0 +1,4 @@
+__pycache__/
+.vscode/
+evidence_log.json
+*.pyc
