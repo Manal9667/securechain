@@ -1,4 +1,4 @@
-# Securechain
+# EvidenceLog
 
 > "Digital evidence is only as trustworthy as its chain of custody."
 
@@ -18,7 +18,7 @@ So I built it.
 
 ---
 
-## 🎯 What Securechain Does
+## 🎯 What EvidenceLog Does
 
 - Generates a SHA-256 fingerprint for any file — image, PDF, video, anything
 - Logs it to a tamper-proof chain with submitter name and timestamp
@@ -40,7 +40,7 @@ SHA-256 produces a unique 64-character hash for every file. Change a single pixe
 ## 📊 Project Structure
 
 ```
-securechain/
+EvidenceLog/
 ├── main.py           # Entry point — three commands cover the full workflow
 ├── blockchain.py         # Block and Chain logic — the core of the system
 ├── hasher.py    # SHA-256 file hashing
@@ -52,8 +52,8 @@ securechain/
 ## 🚀 Run It Yourself
 
 ```bash
-git clone https://github.com/yourusername/securechain
-cd securechain
+git clone https://github.com/yourusername/EvidenceLog
+cd EvidenceLog
 python main.py add        # Log a file
 python main.py verify     # Verify a file's integrity
 python main.py view       # View the full audit trail
