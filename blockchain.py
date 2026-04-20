@@ -1,41 +1,38 @@
 import hashlib
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
-# blockchain.py
-# Purpose: The backbone of Securechain. Defines how evidence entries are
-# structured (Block) and how the full audit trail is managed (Chain).
+# Purpose: Defines how evidence entries are structured and 
+# how the full audit trail is managed.
 # Every time a file is logged, a new Block is created and linked to the
-# previous one — making silent tampering impossible to hide.
-
+# previous one.
 
 class Block:
     """
     Represents a single evidence entry in the chain.
 
-    Each block captures everything you'd want in a chain of custody record:
-    what file was submitted, who submitted it, when, and a cryptographic
-    link back to the block before it. Changing any of these fields after
-    the fact will produce a different hash — and the chain will catch it.
+    Each block contains: what file was submitted, who submitted it, when,
+    and a cryptographic link back to the block before it. Changing any of
+    these fields after the fact will produce a different hash, thus highlighting
+    tampering.
     """
 
     def __init__(self, index, file_name, file_hash, submitted_by, previous_hash):
-        self.index = index                              # Position in the chain (0, 1, 2, ...)
-        self.timestamp = datetime.utcnow().isoformat()  # UTC timestamp at time of logging
-        self.file_name = file_name                      # Original filename e.g. "photo.jpg"
-        self.file_hash = file_hash                      # SHA-256 fingerprint of the file
-        self.submitted_by = submitted_by                # Who logged this piece of evidence
-        self.previous_hash = previous_hash              # Links this block to the one before it
-        self.hash = self.compute_hash()                 # This block's own fingerprint
+        self.index = index # Position
+        self.timestamp = datetime.now(timezone.utc).isoformat() # UTC timestamp at time of logging
+        self.file_name = file_name # Original filename e.g. "photo.jpg"
+        self.file_hash = file_hash # SHA-256 fingerprint of the file
+        self.submitted_by = submitted_by # Who logged this evidence
+        self.previous_hash = previous_hash # Links this block to prev
+        self.hash = self.compute_hash() # This block's fingerprint
 
     def compute_hash(self):
         """
         Produces a unique fingerprint for this block by hashing all its fields together.
 
-        The fingerprint changes completely if even one character in any field is modified.
-        This is what makes tampering detectable — you can't quietly edit old records
-        because the hash won't match anymore.
+        The fingerprint changes if even one character in any field is modified. This is 
+        what makes tampering detectable.
         """
         block_string = (
             str(self.index) +
@@ -49,7 +46,7 @@ class Block:
 
     def to_dict(self):
         """
-        Converts this block into a plain dictionary so it can be saved to JSON.
+        Converts this block into a plain dictionary so to save to JSON.
         All fields are included — nothing is omitted from the audit trail.
         """
         return {
@@ -68,8 +65,7 @@ class Chain:
     Manages the full sequence of evidence blocks.
 
     Handles adding new entries, validating the chain's integrity,
-    and persisting everything to disk between sessions. Think of it
-    as the ledger itself — the blocks are the individual entries.
+    and persisting everything to disk between sessions.
     """
 
     def __init__(self):
@@ -78,17 +74,15 @@ class Chain:
 
         self.load()
 
-        # Fresh start — no saved chain found, so we create one
+        # Create chain if none found
         if len(self.blocks) == 0:
             self.create_genesis_block()
 
     def create_genesis_block(self):
         """
-        Creates block #0 — the anchor that every other block links back to.
+        Creates block #0 aka genesis block.
 
-        The genesis block holds no real evidence. Its only job is to give
-        the first real block something to reference as its previous hash.
-        Without it, there's nothing to start the chain from.
+        Gives first real block something to reference as its previous hash.
         """
         genesis = Block(
             index=0,
@@ -105,16 +99,16 @@ class Chain:
         Logs a new piece of evidence by appending a block to the chain.
 
         Grabs the last block's hash and passes it in as the new block's
-        previous_hash — this is what forms the chain. Returns the new
-        block so the caller can confirm what was logged.
+        previous_hash. Returns the new block so caller can confirm 
+        what was logged.
         """
         last_block = self.blocks[-1]
 
         new_block = Block(
-            index=last_block.index + 1,
+            index= last_block.index + 1,
             file_name=file_name,
             file_hash=file_hash,
-            submitted_by=submitted_by,
+            submitted_by= submitted_by,
             previous_hash=last_block.hash
         )
 
@@ -124,9 +118,9 @@ class Chain:
 
     def is_valid(self):
         """
-        Walks the entire chain and checks for signs of tampering.
+        Searches the entire chain and checks for signs of tampering.
 
-        Two checks are run on every block (skipping genesis):
+        2 checks on every block (skipping genesis):
           1. Does the block's stored hash still match a fresh recomputation?
              If not, someone edited the block's data after it was created.
           2. Does the block's previous_hash match the actual hash of the block before it?
@@ -150,8 +144,8 @@ class Chain:
         """
         Looks up a block by its file hash.
 
-        Used during verification — we rehash the file and search for a match.
-        If found, we know the file was logged and hasn't been modified since.
+        Used during verification — rehash the file and search for a match.
+        If found, the file was logged and hasn't been modified since.
         Returns the matching block, or None if no match exists.
         """
         for block in self.blocks:
@@ -175,10 +169,7 @@ class Chain:
         """
         Reads a previously saved chain from evidence_log.json, if it exists.
 
-        Rebuilds each Block object from the stored data. Critically, the
-        original timestamp and hash are restored directly from the file
-        rather than recomputed — recomputing would generate a new timestamp
-        and invalidate every hash in the chain.
+        Rebuilds each Block object from the stored data.
         """
         if not os.path.exists(self.chain_file):
             return
